@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CyberShield - Email Threat Analysis</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #08111f;
+            color: white;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+
+        .header {
+            background: #0d1b2a;
+            padding: 22px 40px;
+            border-bottom: 1px solid #24364d;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .brand span {
+            color: #4da3ff;
+        }
+
+        /* MAIN CONTAINER */
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 35px 25px;
+        }
+
+        .title {
+            margin-bottom: 25px;
+        }
+
+        .title h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .title p {
+            color: #9fb0c5;
+        }
+
+        /* SUMMARY CARDS */
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: #101f32;
+            border: 1px solid #263b54;
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        .summary-card h3 {
+            color: #9fb0c5;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .summary-card .number {
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        /* ML CARD */
+
+        .ml-card {
+            background: linear-gradient(135deg, #102a46, #0e1d30);
+            border: 1px solid #28527a;
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 25px;
+        }
+
+        .ml-card h2 {
+            font-size: 20px;
+            margin-bottom: 18px;
+        }
+
+        .ml-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .prediction {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .phishing {
+            color: #ff5c5c;
+        }
+
+        .legitimate {
+            color: #48d597;
+        }
+
+        .confidence {
+            color: #8fc7ff;
+            font-size: 18px;
+        }
+
+        /* EMAIL INPUT */
+
+        .input-box {
+            background: #101f32;
+            border: 1px solid #263b54;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            resize: vertical;
+            background: #081522;
+            color: white;
+            border: 1px solid #314a67;
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #4da3ff;
+        }
+
+        button {
+            margin-top: 15px;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 9px;
+            background: #1677ff;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0867e8;
+        }
+
+        /* RISK RESULT */
+
+        .result-card {
+            background: #101f32;
+            border: 1px solid #263b54;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .risk {
+            font-size: 27px;
+            font-weight: bold;
+        }
+
+        .high {
+            color: #ff5252;
+        }
+
+        .medium {
+            color: #ffc857;
+        }
+
+        .low {
+            color: #48d597;
+        }
+
+        .score {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .progress {
+            height: 12px;
+            background: #25364a;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #ff5252;
+            width: {{ score|default(0) }}%;
+        }
+
+        /* ANALYSIS */
+
+        .analysis {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .panel {
+            background: #101f32;
+            border: 1px solid #263b54;
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .panel h2 {
+            margin-bottom: 18px;
+            font-size: 20px;
+        }
+
+        .reason {
+            background: #0a1727;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            color: #c5d2e0;
+            word-break: break-word;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag {
+            background: #193452;
+            border: 1px solid #315a83;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #a9d3ff;
+        }
+
+        /* URL SECTION */
+
+        .url-panel {
+            background: #101f32;
+            border: 1px solid #263b54;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .url-panel h2 {
+            margin-bottom: 18px;
+            font-size: 20px;
+        }
+
+        .url-item {
+            background: #0a1727;
+            border: 1px solid #263b54;
+            padding: 14px;
+            border-radius: 9px;
+            margin-bottom: 10px;
+            color: #8fc7ff;
+            word-break: break-all;
+        }
+
+        .url-label {
+            color: #9fb0c5;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        /* HISTORY */
+
+        .history {
+            background: #101f32;
+            border: 1px solid #263b54;
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .history h2 {
+            margin-bottom: 18px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 13px;
+            text-align: left;
+            border-bottom: 1px solid #263b54;
+        }
+
+        th {
+            color: #8fa4bb;
+            font-size: 13px;
+        }
+
+        td {
+            color: #dce6f0;
+        }
+
+        .status-high {
+            color: #ff5252;
+            font-weight: bold;
+        }
+
+        .status-low {
+            color: #48d597;
+            font-weight: bold;
+        }
+
+        .status-medium {
+            color: #ffc857;
+            font-weight: bold;
+        }
+
+        .empty {
+            color: #8092a7;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 750px) {
+
+            .summary {
+                grid-template-columns: 1fr;
+            }
+
+            .analysis {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 25px 15px;
+            }
+
+            .header {
+                padding: 18px 20px;
+            }
+
+            .title h1 {
+                font-size: 26px;
+            }
+
+            .result-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        <div class="brand">
+            🛡️ Cyber<span>Shield</span>
+        </div>
+
+    </div>
+
+
+    <div class="container">
+
+
+        <!-- TITLE -->
+
+        <div class="title">
+
+            <h1>
+                Email Threat Analysis Dashboard
+            </h1>
+
+            <p>
+                AI-powered email security and phishing threat detection system
+            </p>
+
+        </div>
+
+
+        <!-- SUMMARY CARDS -->
+
+        <div class="summary">
+
+            <div class="summary-card">
+
+                <h3>
+                    📧 Total Emails Analyzed
+                </h3>
+
+                <div class="number">
+                    {{ total }}
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <h3>
+                    🚨 High Risk Emails
+                </h3>
+
+                <div class="number">
+                    {{ high }}
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <h3>
+                    🛡️ Safe Emails
+                </h3>
+
+                <div class="number">
+                    {{ safe }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- MACHINE LEARNING ANALYSIS -->
+
+        {% if ml_result %}
+
+        <div class="ml-card">
+
+            <h2>
+                🤖 Machine Learning Analysis
+            </h2>
+
+
+            <div class="ml-info">
+
+                {% if ml_result == "PHISHING" %}
+
+                <div class="prediction phishing">
+
+                    🚨 {{ ml_result }}
+
+                </div>
+
+                {% else %}
+
+                <div class="prediction legitimate">
+
+                    🛡️ {{ ml_result }}
+
+                </div>
+
+                {% endif %}
+
+
+                <div class="confidence">
+
+                    Confidence:
+                    <strong>
+                        {{ ml_confidence }}%
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+
+        <!-- EMAIL INPUT -->
+
+        <div class="input-box">
+
+            <form
+                action="/analyze"
+                method="POST"
+            >
+
+                <textarea
+                    name="email"
+                    placeholder="Paste email content here for security analysis..."
+                    required
+                ></textarea>
+
+
+                <button type="submit">
+
+                    🔍 Analyze Email
+
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <!-- RISK RESULT -->
+
+        {% if result %}
+
+        <div class="result-card">
+
+            <div class="result-header">
+
+
+                <div class="risk {{ risk_class }}">
+
+                    {% if risk_class == "high" %}
+
+                        🚨
+
+                    {% elif risk_class == "medium" %}
+
+                        ⚠️
+
+                    {% else %}
+
+                        🛡️
+
+                    {% endif %}
+
+                    {{ result }}
+
+                </div>
+
+
+                <div class="score">
+
+                    {{ score }}/100
+
+                </div>
+
+            </div>
+
+
+            <div class="progress">
+
+                <div
+                    class="progress-bar"
+                    style="width: {{ score }}%;"
+                ></div>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+
+        <!-- THREAT ANALYSIS -->
+
+        {% if reasons or categories %}
+
+        <div class="analysis">
+
+
+            <!-- REASONS -->
+
+            <div class="panel">
+
+                <h2>
+                    🔎 Threat Analysis
+                </h2>
+
+
+                {% for reason in reasons %}
+
+                <div class="reason">
+
+                    • {{ reason }}
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <!-- MODULES -->
+
+            <div class="panel">
+
+                <h2>
+                    🧠 Analysis Modules
+                </h2>
+
+
+                <div class="tags">
+
+                    {% for category in categories %}
+
+                    <div class="tag">
+
+                        {{ category }}
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+
+        <!-- DETECTED URLS -->
+
+        {% if detected_urls %}
+
+        <div class="url-panel">
+
+            <h2>
+                🔗 Detected URLs
+            </h2>
+
+
+            <div class="url-label">
+                URLs identified inside the analyzed email
+            </div>
+
+
+            {% for url in detected_urls %}
+
+            <div class="url-item">
+
+                🔗 {{ url }}
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        {% endif %}
+
+
+        <!-- THREAT HISTORY -->
+
+        <div class="history">
+
+            <h2>
+                📊 Threat History
+            </h2>
+
+
+            {% if history %}
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Analysis
+                        </th>
+
+                        <th>
+                            Risk Level
+                        </th>
+
+                        <th>
+                            Score
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for item in history %}
+
+                    <tr>
+
+                        <td>
+                            #{{ loop.index }}
+                        </td>
+
+
+                        <td>
+
+                            {% if item.risk == "HIGH RISK" %}
+
+                            <span class="status-high">
+
+                                🚨 {{ item.risk }}
+
+                            </span>
+
+
+                            {% elif item.risk == "MEDIUM RISK" %}
+
+                            <span class="status-medium">
+
+                                ⚠️ {{ item.risk }}
+
+                            </span>
+
+
+                            {% else %}
+
+                            <span class="status-low">
+
+                                🛡️ {{ item.risk }}
+
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {{ item.score }}/100
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+
+            {% else %}
+
+            <div class="empty">
+
+                No email analysis performed yet.
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+
+    </div>
+
+</body>
+
+</html>
